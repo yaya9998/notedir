@@ -128,4 +128,7 @@ mysql> start  slave;
 2 指定server_id
 3 指定主库信息
 4 查看从库状态信息
+
+
 3.1 主从同步复制模式
+
