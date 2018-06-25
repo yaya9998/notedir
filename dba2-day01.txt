@@ -118,10 +118,26 @@ mysql> start  slave;
 
 主从配置常用参数
 
+主库  /etc/my.cnf
+[mysqld]
+#binlog_do_db=db2,bbsdb  只允许同步的库
+binlog_ignore_db=db9   只不允许同步的库
+
+
+
+从库/etc/my.cnf
+[mysqld]
+log_salve_updates 级联复制 ***
+#replicate_do_db=db3,db5 只同步的库
+replicate_ignore_db=db1,db7,db9 只不同步的库
+
+
+
 
 三、主从同步模式
 3.1 主从同步结构模式
-一主一从
+一主一从 把52主机配置为51的从库 
+
 一主多从 把50主机配置为51的从库 
 从配置步骤：192.168.4.50
 1 验证主库授权用户
@@ -129,6 +145,65 @@ mysql> start  slave;
 3 指定主库信息
 4 查看从库状态信息
 
+主从从  把主机53配置为52从库。15:10
+
+配置主库 192.168.4.52
+启用binlog日志
+用户授权
+
+配置从库：192.168.4.53
+1 验证主库授权用户
+2 指定server_id
+3 指定主库信息
+4 查看从库状态信息
+  
+***
+从库的SQL线程执行本机中继日志文件里的SQL命令，不会记
+
+录在本机的binlog日志文件里。
+
+
+主主结构（互为主从） 课后作业。
 
 3.1 主从同步复制模式
 
+
+启用主库的半同步复制模式
+
+启用从库的半同步复制模式
+
+
+
+查看是否支持动态加载模块
+show variables like  "have_dynamic_loading";
+
+
+查看以安装的插件
+ SELECT  PLUGIN_NAME, PLUGIN_STATUS 
+FROM INFORMATION_SCHEMA.PLUGINS  
+WHERE PLUGIN_NAME LIKE '%semi%';
+
+主库安装插件：
+mysql>
+INSTALL PLUGIN rpl_semi_sync_master SONAME  
+
+'semisync_master.so';
+
+从库安装插件：
+mysql>
+INSTALL PLUGIN rpl_semi_sync_slave SONAME 
+
+'semisync_slave.so';
+
+
+
+启用半同步复制
+查看本机的半同步复制状态
+show  variables  like  "rpl_semi_sync_%_enabled";
+主库：
+mysql>
+ SET GLOBAL rpl_semi_sync_master_enabled = 1;
+
+从库
+mysql>
+ SET GLOBAL rpl_semi_sync_slave_enabled = 1;
