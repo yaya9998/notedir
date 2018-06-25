@@ -1,0 +1,131 @@
+MySQL主从同步
+MySQL主从同步模式
+
+MySQL主从同步介绍：
+
+角色分为2种：
+数据库服务 做主master库：被客户端存储数据访问的库
+数据库服务 做从slave库：同步主库的数据到本机
+
+MySQL主从同步作用：实现数据的自动备份。
+
+配置mysql主从同步结构
+准备2台数据库服务器  
+         客户端 192.168.4.254 
+                mysql  -h192.168.4.51  -uadmin	 -
+
+p123456
+
+
+
+192.168.4.51 192.168.4.52
+   master       slave                
+
+
+主库配置步骤：192.168.4.51
+1 启用binlog日志
+2 用户授权
+3 查看正在使用的binlog日志信息
+
+vim /etc/my.cnf
+[mysqld]
+server_id=51
+log-bin=master51
+binlog-format="mixed"
+
+[root@host51 ~]# systemctl  restart mysqld
+[root@host51 ~]# ls /var/lib/mysql/master51.*
+
+mysql> grant replication slave on  *.*  to 
+
+repluser@"192.168.4.52" identified by "123qqq...A";
+
+mysql> show master status;
+mysql> show processlist;
+
+从配置步骤：192.168.4.52
+1 验证主库授权用户
+2 指定server_id
+3 指定主库信息
+4 查看从库状态信息
+
+]# mysql -h192.168.4.51 -urepluser -p123qqq...A
+mysql> quit;
+
+vim /etc/my.cnf
+[mysqld]
+server_id=52
+]# systemctl  restart mysqld
+
+]#mysql  -uroot  -p123qqq...A
+mysql> change master  to
+    -> master_host="192.168.4.51", 主库IP
+    -> master_user="repluser",  用户名
+    -> master_password="123qqq...A", 密码
+    -> master_log_file="master51.000001", binlog日志
+    -> master_log_pos=452; 偏移量
+
+mysql> start slave;
+mysql> show  slave status\G;
+
+            Slave_IO_Running: Yes
+            Slave_SQL_Running: Yes
+
+mysql>show processlist;
+
+
+工作原理
+[root@host52 ~]# cd /var/lib/mysql
+master.info
+relay-log.info
+host52-relay-bin.xxxxxx
+host52-relay-bin.index
+
+
+IO线程：
+Last_IO_Error:
+
+SQL线程
+Last_SQL_Error:
+
+
+客户端验证主从同步配置
+1 在主添加访问数据时，连接的用户
+mysql> grant all on bbsdb.* to  jim@"%"
+    -> identified by "123qqq...A";
+
+2 在客户端访问
+]#mysql  -h主库IP   -u用户名  -p密码  库名
+MySQL>建表插入记录
+
+在从本机查看是否有同样的数据
+
++++++++++++++++++++++++++++++++++++++++++++++
+
+练习： 把54主机配置为53主机的从数据库服务器。 
+11:25
+
+++++++++++++++++++++++++++++++++++++++++++++++
+让当前从库临时不同步主库上的数据。
+mysql> stop  slave;
+
+
+在从库修改主库的信息。
+mysql> stop  slave;
+mysql> change  master  tom  选项="值",选项="值";
+mysql> start  slave;
+
+
+主从配置常用参数
+
+
+三、主从同步模式
+3.1 主从同步结构模式
+一主一从
+一主多从 把50主机配置为51的从库 
+从配置步骤：192.168.4.50
+1 验证主库授权用户
+2 指定server_id
+3 指定主库信息
+4 查看从库状态信息
+3.1 主从同步复制模式
