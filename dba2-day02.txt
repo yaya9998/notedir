@@ -1,0 +1,309 @@
+
+MySQL数据读写分离
+MySQL多实例
+mysql性能优化
+
+MySQL数据读写分离：
+把客户端访问数据库服务时的查询请求和写数
+
+据的请求给不同的数据库服务器处理。
+
+人肉分离
+
+              client254
+mysql  -h192.168.4.100  -u   -p 
+MySQL>select ----> 10
+mysql> insert/delete/update ->20
+
+
+                100
+             代理服务器(服务)-->配置文件
+
+
+         写		读
+       select      insert/delete/update 
+        slave          master
+
+       MySQL10       MySQL20
+
+部署MySQL数据读写分离架构
+1 配置MySQL主从同步
+要求：把20配置为10的从库。
+
+配置主库10
+启binlog日志
+用户授权
+查看日志信息
+
+配置从库20
+验证授权
+指定server_id
+指定主库信息
+查看从库状态
+
+客户端验证主从同步配置:
+在主库添加访问数据的连接用户并设置密码
+create database db12;
+grant  all on  db12.*  to  yaya@"%" 
+
+identified by "123qqq...A";
+
+客户端连接主库 执行sql命令
+mysql -h192.168.4.10 -uyaya -p123qqq...A
+mysql> 建库 建表 插入记录
+
+在从库本机也能够看到同样的数据
+mysql  -uroot  -p123qqq...A
+mysql> select  * from db12.a;
+
+
+mysql中间件：mysql-proxy mycat  maxscale
+
+在主机100上部署代理服务，实现数据读写分
+
+离。
+装包
+修改配置文件,并根据配置文件的设置在数据
+
+库服务器上添加对应的授权用户。
+启动服务。
+查看服务信息。
+
+]# rpm -ivh maxscale-2.1.2-
+
+1.rhel.7.x86_64.rpm
+
+]# cp /etc/maxscale.cnf 
+
+/etc/maxscale.cnf.bak
+
+vim  /etc/maxscale.cnf
+
+
+scalemon用户
+grant replication slave, replication 
+
+client on *.* to scalemon@'%'  
+
+identified by "123qqq...A";
+ 
+maxscale用户
+grant select on mysql.* to maxscale@'%' 
+
+identified by "123qqq...A";
+
+select user from mysql.user where user 
+
+in ("scalemon","maxscale");
+
+
+#mysql -h192.168.4.10 -uscalemon -
+
+p123qqq...A
+
+#mysql -h192.168.4.20 -uscalemon -
+
+p123qqq...A
+
+
+  223  maxscale -f /etc/maxscale.cnf
+  224  ps -C maxscale
+  226  netstat -utnlp | grep maxscale
+
+
+测试配置
+1在主机100上连接管理服务查看监控信息
+[root@host100 ~]# maxadmin -uadmin -
+
+pmariadb -P4099
+MaxScale> list servers
+
+2在客户端连接100主机，访问数据时能否实现
+
+数据读写分离
+
+]#ping  -c 2  192.168.4.100
+]#which  mysql
+
+]#mysql -h192.168.4.54 -P4006 -uyaya -
+
+p123qqq...A
+
+select    insert  
+
+++++++++++++++++++++++++
+mysql性能优化
+
+MySQL工作原理：
+1.1 MySQL服务的工作过程
+
+管理工具：MySQL服务软件安装后提供的命令
+连接池：检查本机是否有资源处理当前的连接
+
+请求                 （空闲的线程 内存）
+
+sql接口：把sql命令传递给mysql服务的进程
+
+处理。
+
+分析器：检查执行的sql命令是否有语法错误
+
+优化器：优化执行的sql命令，使其能以最节
+
+省系统资源的方式执行。
+
+查询缓存：查询缓存的存储空间是从系统的物
+
+理内存里划分出来的，用来存储查询过的查询
+
+结果。
+
+存储引擎：软件自带的功能程序，是用来处理
+
+表的处理器。
+
+文件系统 ： 数据库服务器存储数据的磁盘
+
+1.2 MySQL服务处理查询请求的过程
+
+
+MySQL优化：
+数据库服务器处理客户的连接请求慢，可能是
+
+由哪些原因导致。
+
+网络带宽
+
+服务器硬件的配置：查看服务器硬件资源的使
+
+用情况 CPU  内存   存储  I/O
+
+提供数据服务软件版本低。
+查看服务运行时的参数设置： /etc/my.cnf
+
+查看变量的值 
+mysql> show  variables;
+mysql> show  variables like "%关键字%";
+mysql> show variables like "%time%";
+
+帮助文档：
+MySQL帮助手册
+mysql配置文件详解
+
+修改变量的值：
+命令行修改
+set  [global] 变量名=值；
+
+
+永久修改
+vim /etc/my.cnf
+[mysqld]
+变量名=值
+
+常用的参数有哪些？
+并发连接数
+set global max_connections = 500;
+show variables like "max_connections";
+
+show  global status  like 
+
+"%Max_used_connections%";
+
+有过的最大连接数量/并发连接数=0.85
+Max_used_connections/max_connections=0.8
+
+5
+
+100/x=0.85 *  100%  = 85%
+
+可以重复使用的线程的数量
+thread_cache_size  = 90 
+
+
+为所有线程缓存打开表的数量
+table_open_cache  2000 
+
+mysqld  --->  t1.* ----> 内存 ---硬盘
+
+key_buffer_size 索引缓存大小
+index  primary key  foreign key
+
+字段值排序 存储在 a.MYI /var/lib/mysql/
+                  a.ibd
+select name from  user.a where 
+
+name="bob";
+
+
+查看数据库服务查询缓存的设置
+show variables like "%cache%";
+
+show variables like "query_cache%";
+
+
+query_cache_type = 0 | 1 | 2
+
+select  sql_in_cache  字段名列表from 表
+
+；
+
+query_cache_wlock_invalidate   off 
+
+当对myisam存储引擎的表，查询的时候，若此
+
+时有客户端对表执行写操作，MySQL服务不会
+
+从缓存里查找数据返回给客户端，而是等写操
+
+作完成后，重新从表里查找数据返回给客户端
+
+。
+atab    myisam
+pc1  
+select name from a where name="bob";
+
+name="bob"  ----> 查询缓存
+
+pc2 
+select name from a where name="bob";
+
+
+pc3
+update  a  set  name="tom"  where 
+
+name="bob";
+
+查询缓存统计信息
+Qcache_hits       10      
+Qcache_inserts    100      
+
+
+程序员编写的访问数据库服务数据的sql命令复杂 导致处理速度。
+
+在数据库服务器上启用慢查询日志，记录超过指定时间显示查询结果的sql命令。
+
+日志的种类：
+binlog日志 错误日志 查询日志 慢查询日志 
+              *
+
+
+
+查询日志：记录所有的sql命令
+启用日志  general-log
+日志名    主机名.log
+ 
+慢查询日志： 只记录超过超时时间(10s)显示查询结果的sql命令
+vim /etc/my.cnf
+[mysqld]
+slow-query-log
+log_queries_not_using_indexes=1
+:wq
+
+]# mysqldumpslow host10-slow.log
+
+
+]# mysqldumpslow host10-slow.log  >  /root/sql.txt
+vim  /root/sql.txt
+
+数据存储架构问题：
+数据传输时有瓶颈
