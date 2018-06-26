@@ -11,7 +11,8 @@ ______________________________________________________
 
 公共配置：
 在所有主机上安装软件软件包
-[root@db108 share]# ls  perl-*.rpm
+]# cd mha-soft-student
+]# ls  perl-*.rpm
 perl-Config-Tiny-2.14-7.el7.noarch.rpm          
 perl-Mail-Sender-0.8.23-1.el7.noarch.rpm       
 perl-MIME-Types-1.38-2.el7.noarch.rpm
