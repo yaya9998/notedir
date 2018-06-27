@@ -1,0 +1,183 @@
+部署MySQL高可用集群 （MHA软件+主从同步）
+
+集群 ： 使用多服务器提供相同的服务51-55
+
+高可用集群 主备模式  当主角色的主机宕机后，备用主机自动接替主角色的主机，提供服务给客户端。
+
+cilent  mysql  -h192.168.4.100  -uwebuser  -p123qqq...A
+
+vip地址 192.168.4.100
+
+
+                vip
+  主       备用主  备用主           
+mysql51  mysql52  mysql53    mysql54   mysql55
+          slave    slave     slave     slave
+
+
+准备MHA运行环境
+一主多从
+安装依赖的软件包
+ssh root用户无密码登录
+
+二、配置MHA
+
+
+2.1 配置数据节点 192.168.4.51-55
+2.1.1 一主多从 
+
+2.1.2 安装依赖的perl软件包 
+
+2.1.3 安装软件mha-node
+yum -y  install perl-DBD-mysql
+rpm -ivh mha4mysql-node-0.56-0.el6.noarch.rpm 
+
+2.1.4 彼此之间可以 ssh root用户无密码登录 
+
+
+2.1.5 授权监控用户 
+grant all  on *.* to 'root'@'%' identified  by  "123456";
+				            123aaa...A
+
+2.1.6 所有数据库服务器启用不自动删除本机的中继日志文件
+mysql> set global relay_log_purge=off;
+
+
+2.2 配置管理主机 192.168.4.56：
+2.2.1 安装依赖的perl软件包
+
+2.2.2装包
+]# yum -y  install perl-DBD-mysql 
+]# rpm -ivh  mha4mysql-node-0.56-0.el6.noarch.rpm
+
+]# yum -y  install perl-ExtUtils-*   perl-CPAN-*
+
+
+]#tar -zxf mha4mysql-manager-0.56.tar.gz 
+
+]#cd mha4mysql-manager-0.56
+]# perl  Makefile.pl
+]# make
+]# make  install
+
+
+2.2.3 指定命令所在的路径
+]# cd mha4mysql-manager-0.56
+]# mkdir /root/bin
+]# cp bin/* /root/bin/
+]# s /root/bin
+
+2.2.4修改配置文件
+
+]# mkdir /etc/mha_manager/
+]# cd mha4mysql-manager-0.56/samples/conf/
+]# cp  app1.cnf   /etc/mha_manager/
+
+]# vim  /etc/mha_manager/app1.cnf
+
+
+
+]# cd mha4mysql-manager-0.56/samples/scripts
+]# cp master_ip_failover  /etc/mha_manager/
+
+]# rm  -rf /etc/mha_manager/master_ip_failover 
+
+]# cd  mha-soft-student
+]# cp master_ip_failover /etc/mha_manager/
+
+]# vim /etc/mha_manager/master_ip_failover 
+ 35 my $vip = '192.168.4.100/24';  # Virtual IP 
+ 36 my $key = "1";
+ 37 my $ssh_start_vip = "/sbin/ifconfig eth0:$key $vip";
+ 38 my $ssh_stop_vip = "/sbin/ifconfig eth0:$key down";
+
+
+测试配置文件
+ ]# vim /etc/mha_manager/app1.cnf
+#master_ip_failover_script=/etc/mha_manager/master_ip_failover
+:wq
+
+]# masterha_check_ssh  --conf=/etc/mha_manager/app1.cnf
+
+.... All SSH connection tests passed successfully.
+
+
+]# masterha_check_repl --conf=/etc/mha_manager/app1.cnf
+.....
+.....
+MySQL Replication Health is OK.
+
+17:15
+
+3 启动服务
+
+3.1 把vip 地址手动绑定在当前的主库51上
+]# ifconfig  eth0:1 192.168.4.100/24
+]# ifconfig  eth0:1 
+
+3.2 启动服务
+]# vim /etc/mha_manager/app1.cnf
+master_ip_failover_script=/etc/mha_manager/master_ip_failover
+:wq
+
+
+]#masterha_manager --conf=/etc/mha_manager/app1.cnf --remove_dead_master_conf  --
+
+ignore_last_failover
+
+]#masterha_check_status --conf=/etc/mha_manager/app1.cnf
+
+4测试高可用集群配置
+
+在数据库服务器上添加访问数据时连接用户 webuser  123qqq...A
+mysql> create database db13;
+Query OK, 1 row affected (0.04 sec)
+
+mysql> grant all on  db13.* to webuser@"%" 
+    -> identified by "123qqq...A";
+
+4.1 客户端连接VIP地址访问数据库
+]# mysql -h192.168.4.100 -uwebuser -p123qqq...A
+
+
+4.2 测试高用集群
+把主机51上的数据库服务停止 
+
+
+
+
+
+把宕机的数据库服务器51 在添加到当前集群里
+
+
+mysql> change master to master_host="192.168.4.52",
+    -> master_user="repluser",
+    -> master_password="123qqq...A",
+    -> master_log_file="master52.000001",
+    -> master_log_pos=154;
+Query OK, 0 rows affected, 2 warnings (0.30 sec)
+
+mysql> start slave;
+
+
+56：
+]# vim /etc/mha_manager/app1.cnf
+[server1]
+candidate_master=1
+hostname=192.168.4.51
+
+:wq
+
+]# masterha_check_repl --conf=/etc/mha_manager/app1.cnf
+MySQL Replication Health is OK.
+
+
+]#masterha_manager --conf=/etc/mha_manager/app1.cnf --remove_dead_master_conf  --
+
+ignore_last_failover
+
+
+[root@mgm56 ~]# masterha_check_status --conf=/etc/mha_manager/app1.cnf
+app1 (pid:8710) is running(0:PING_OK), master:192.168.4.52
+[root@mgm56 ~]#
+
