@@ -130,6 +130,100 @@ MaxScale> list servers
 p123qqq...A
 
 select    insert  
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+MySQL多实例  192.168.4.50
+
+装包
+
+定义命令路径
+vim /etc/profile
+export  PATH=/usr/local/mysql/bin:$PATH
+:wq
+
+
+创建配置文件
+vim /etc/my.cnf
+[mysqld_multi]
+mysqld = /usr/local/mysql/bin/mysqld_safe
+mysqladmin = /usr/local/mysql/bin/mysqladmin
+user = root
+
+[mysqld1]
+port=3307
+datadir=/dir3307
+socket=/dir3307/mysqld3307.sock
+pid-file=/dir3307/mysqld.pid
+log-error=/dir3307/mysqld.err
+
+[mysqld2]
+port=3308
+datadir=/dir3308
+socket=/dir3308/mysqld3308.sock
+pid-file=/dir3308/mysqld.pid
+log-error=/dir3308/mysqld.err
+:wq
+
+
+
+创建数据库目录
+mkdir /dir3307
+mkdir /dir3308
+
+初始授权库
+]#mysqld  --user=mysql  --basedir=/usr/local/mysql --datadir=/dir3307 --initialize 
+
+
+aLJJ#Dy76Wt3 登录初始密码
+
+]# mysqld  --user=mysql  --basedir=/usr/local/mysql --datadir=/dir3307 --initialize 
+
+2wtmOpI0Zp&Q  登录初始密码
+
+启动实例服务
+  617  mysqld_multi start 1
+  618  netstat  -utnlp  | grep :3307
+
+  619* mysqld_multi start 2
+  620  netstat  -utnlp  | grep :3308
+
+  621  ps -C mysqld
+  624  netstat  -utnlp  | grep mysqld
+  
+  622  ps aux | grep mysqld
+
+连接本机的数据库服务
+]#mysql -uroot -p'初始密码'  -S  socket文件
+mysql> alter user root@"localhost" identified by "123456";
+mysql> quit
+
+]#mysql -uroot -p123456  -S  socket文件
+mysql> show databases;
+mysql> 
+
+停止指定的实例服务
+]# mysqld_multi --user=root --password=密码  stop 实例编号 
+
+# mysqld_multi --user=root --password=123456 stop 2
+[root@host50 ~]# netstat  -utnlp  | grep ：3308
+
+]# mysql -uroot -p123456 -S /dir3308/mysqld3308.sock 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ++++++++++++++++++++++++
 mysql性能优化
