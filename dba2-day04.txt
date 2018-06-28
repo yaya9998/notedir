@@ -1,0 +1,86 @@
+什么是视图： 虚拟表
+
+视图的基本使用： 
+创建  
+mysql> create view t1 as select 
+
+name,shell from user  where  
+
+uid<=20;
+
+
+create view t4(user,stu_uid,stu_g) 
+
+ as select name,uid,gid  from user 
+
+limit 3;
+
+
+
+查看（哪些表是视图表 哪些是物理表）
+
+mysql> show table status where 
+
+comment="view"\G;
+
+查看视图的数据是哪个基表里的
+mysql> show   create  view  t1;
+
+16:25
+
+使用视图  对视图表里的数据做
+select  insert  update delete 
+
+删除视图
+drop  view  视图名；
+
+创建视图时必须给视图中的字段定义别
+
+名的情况
+
+mysql> create table user2 select 
+
+name,uid ,shell from user limit 5;
+
+mysql> create table info select 
+
+name,uid ,shell from user 
+limit 10;
+
+
+mysql> 
+create view v2 
+
+as  
+select  a.name as aname , b.name 
+
+as bname , a.uid as auid , b.uid 
+
+as  buid from user2 a left join 
+
+info b 
+on 
+a.uid=b.uid;
+create  view  v22 
+as
+select  
+user2.name as uname,
+info.name as iname 
+
+from user2 left join info 
+on 
+user2.uid=info.uid;
+
+select  * from v22;
+
+
+
+WITH 方式 CHECK OPTION  作用是定义
+
+对视图表里的数据做操作时的限制方式
+
+。
+方式
+LOCAL 满足视图本身的限制即可。
+CASCADED 同时满足基表的限制。
+
