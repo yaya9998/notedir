@@ -1,0 +1,38 @@
+1 为满足公司业务需求搭建数据库服务器并设置数据库管理员root本机登录密码为tarena
+
+2 数据库授权要求如下：
+让数据库管理员root可以从192.168.4.254主机登录  密码是plj123  对所有库和表拥有完全完全权限，且有授权权限。
+允许网站服务器192.168.4.13, 可以把数据存放到bbsdb库里。
+不允许数据库管理员root用户从数据库本机登录。
+
+3  导入论坛网站的初始数据到bbsdb库下的user表里。导入数据后为了便于以后查找，给记录加编号。
+文件内容如下：
+[root@stu ~]# cat  /tmp/user.txt
+#用户名  密码  描述信息
+root  123456  /root
+bin 123456 /bin
+daemon 123456 /sbin
+adm 123456 /var/adm
+lp 123456 /var/spool/lp
+sync 123456 /sbin
+shutdown 123456 /sbin
+halt 123456 /sbin
+mail 123456 /var/spool/mail
+uucp 123456 /var/spool/uucp
+[root@stu ~]#
+
+4  数据备份需求 ： 
+每天下午5点 对bbsdb库下user表做完全备份把备份文件存储到本机的/mybakdata  文件夹里备份文件的命名格式: 表名-年-月-日.sql  allbakuser.sh
+
+每周一23点对bbsdb库做完全备份  allbbsdbbak.sh
+
+每周的周二 至 周日 23:30  对bbsdb库做 增量备份  newbbsdbdata.sh
+
+crontab  -e
+00  17   *  *  *  /bakscript/allbakuser.sh
+00  23   *  *  1  /bakscript/allbbsdbbak.sh
+30  23   *  *  2-7  /bakscript/newbbsdbdata.sh
+
+
+5 为了规避单台数据服务器的单点故障问题，给其配置一台从数据库服务器。
+
