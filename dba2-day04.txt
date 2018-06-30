@@ -83,4 +83,61 @@ WITH 方式 CHECK OPTION  作用是定义
 方式
 LOCAL 满足视图本身的限制即可。
 CASCADED 同时满足基表的限制。
+with  check  option 选项的使用
+
+
+create  table  user2  
+select name,uid,shell from user;
+
+select  *  from  user2;
+
+
+create view  v1  
+as  
+select  *  from user2 where uid <=30;
+
+select  * from v1;
+++++++++++++++++++++++++++++
+create  view  v2 
+as
+select  *  from v1 where uid >=20 with check option;
+
+show  create  view  v2;
+
+select  * from v2;
+
+
+update  v2  set uid=19 where name="mysql";不满足自己
+
+update  v2  set uid=39 where name="mysql";不满足基本
+
+update  v2  set uid=29 where name="mysql";同时满足
+
+
+
+create  view  v3
+as
+select  * from  v1  where uid>=20 
+with local check option;
+
+show create  view v3;
+
+select  * from v3;
+
+update  v3  set uid=10 where name="mysql";
+update  v3  set uid=35 where name="mysql";
+
+select  * from  v3  where  name="mysql";
+select  * from  v3;
+
+select  * from  v1;
+select  * from  v1  where  name="mysql";
+
+select  * from user2 where  name="mysql";
+
+
+
+
+
+
 
