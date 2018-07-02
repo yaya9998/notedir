@@ -1,0 +1,34 @@
+NoSQL  (Redis  MongoDB)
+
+在主机50上部署内存存储数据库服务器redis
+
+配置步骤：
+1 装包
+2 做初始化配置
+
+3启动服务 (初始化配置完成后默认启动服务)
+]# /etc/init.d/redis_6379 status | start | stop
+]# netstat -utnlp  | grep :6379
+]# ps -C redis-server
+
+4 访问redis服务器存储数据
+[root@host50 utils]# redis-cli 
+127.0.0.1:6379> ping
+PONG
+127.0.0.1:6379> set name bob
+OK
+127.0.0.1:6379> get name
+"bob"
+127.0.0.1:6379> quit
+[root@host50 utils]# ls /var/lib/redis/6379/
+dump.rdb
+[root@host50 utils]# 
+
+17:30
+
+在主机51上部署内存存储数据 数据库服务器redis
+装包
+初始化配置
+启动服务
+查看服务运行信息
+连接服务存储数据
