@@ -1,0 +1,152 @@
+
+脚本  
+
+
+reg_tab
+login_name  密码  注册时间  性别
+
+delimiter //
+create  procedure  getnum(in  riqi date)
+begin
+
+select  count(login_name) from rge_tab where
+注册时间>riqi ;
+
+end
+//  
+ delimiter ;
+
+call getnum(20180702010000);
+
+
++++++++++++++++++++++++++++++++
+innobackupex  做完全备份  db1   a  b
+
+/db1allbak
+
+
+模拟数据丢失  删除表  
+
+从备份文件里导出表信息  a.exp  a.cnf a.frm a.ibd
+                        b.exp  b.cnf b.frm b.ibd
+
+创建删除的表（表结构要和删除时相同）
+b.frm b.ibd
+
+删除表空间文件
+
+把导出的表信息文件拷贝的数据库目录下
+*.exp  *.cnf  *.ibd
+
+
+导入表信息
+
+rm  -rf  *.exp  *.cnf
+
+查看数据是否恢复成功
+select  * from 表名；
+
+
++++++++++++++++++++++++++++++++++
+为什么要数据读写分离
+装包
+修改配置文件 
+maxscale.cnf
+指定服务运行的线程数量
+指定数据库服务器[server数字]
+指定监控的数据库服务器[mysql_monitor]
+定义读写分离服务[read_writer_services]
+定义管理服务使用的端口号
+定义读写分离使用的端口号
+在数据库服务器为上添加有对应访问权限的用户
+scalemon和maxscale
+启动maxscale 服务  并查看端口 和进程名
+客户端连接maxscale 服务访问数据
++++++++++++++++++++++++++++++++++++++
+binglog日志  
+安装开源的percona软件提供innobackupex命令做增量备份
+
+首先要有有一次备份（通常是完全备份）
+innobackupex  --user  用户名  --password 密码  --
+
+databases="库名"  目录名  --no-timestamp
+
+innobackupex  --user  用户名  --password 密码  --
+
+databases="库名"  --incremental  /new1dir --
+
+incremental-basedir=上一次备份目录名 --no-timestamp
+
+
+++++++++++++++++++++++++++++++++++++++++++++
+多查询什么是使用？
+
+嵌套查询
+select  字段名列表 from 表名  where  条件 （select  
+
+字段名列表 from 表名  where  条件）；
+
+
+select   字段名列表 from 表名列表 where 条件；
+       表.字段名，表名.*
+            *
+ 
+select   字段名列表 from 表名A left join 表名B  on 条
+
+件;
+
+
+ select   字段名列表 from 表名A right join 表名B  on 
+
+条件;
+
+
++++++++++++++++++++++++++++++++++++++++++++
+
+ create ALGORITHM=TEMPTABLE  view v111 as select * 
+
+from t1;
+
+
+++++++++++++++++++++++++++++++++
+show variables;
+
+show variables like "%cache%";
+
+set [global] 变量名=值；
+
+内存相关变量
+mysql 帮助手册   主配置文件参数详细说明my.cnf
+
+
+++++++++++++++++++++++++++++
+MHA高可用集群的配置步骤：
+配置一主多从 （其中有3做主库 并开半同步复制）
+
+全同步模式
+异步同步模式
+半同步模式
+
+配置MHA集群：
+配置数据节点 51-55  安装MHA_node
+配置管理节点 56  安装MHA_node  MHA_manager
+修改管理主机的主配置文件 
+app1.cnf
+管理主机的配置[server default]
+ip_xxx_xxxx
+
+定义数据库服务器[server数字]
+
+测试配置文件: ssh无密码连接  主从同步
+启动服务
+
+测试mha集群
+
+把当前的主库宕机或停止数据库服务器，此时客户端依然可以
+
+访问vip地址 连接数据库服务器。
+
+把宕机数据库服务器添加到集群里
+手动配置我当前主库的从库
+修改app1.cnf 宕机的数据库的信息
+测试配置配置并启动管理服务。
